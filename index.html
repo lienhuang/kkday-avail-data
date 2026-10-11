@@ -328,7 +328,14 @@ html,body{overscroll-behavior:none;max-width:100%}
     $('qTo').onkeydown=function(e){if(e.key==='Enter'){var q=$('qTo').value.trim();st.to='';st.q=q;closeAll();render()}};
     $('gTo').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.q!=null){st.q=b.dataset.q;st.to=''}else{st.to=b.dataset.v;st.q=''}$('qTo').value='';closeAll();render()};
     // 日曆
-    var cnt={};D.p.forEach(function(p){p.days.forEach(function(o){if(!cnt[o])cnt[o]={n:0,mn:Infinity};cnt[o].n++;if(p.m[o]<cnt[o].mn)cnt[o].mn=p.m[o]})});
+    // 篩選條件（日期以外）：類別、出發地、目的地、關鍵字、天數
+    function okP(p){
+      if(st.from&&!(st.from==='其他'?!p.from.length:p.from.indexOf(st.from)>=0))return false;
+      if(st.to&&cts(p).indexOf(st.to)<0)return false;if(st.q&&p.txt.indexOf(st.q.toLowerCase())<0)return false;
+      if(st.dur){if(p.dmin==null)return false;var a=p.dmin,b=p.dmax;if(st.dur==='s'&&!(a<=4&&b>=3))return false;if(st.dur==='m'&&!(a<=6&&b>=5))return false;if(st.dur==='l'&&!(b>=7))return false}
+      return true}
+    // 日曆每日最低價：只算目前條件（類別／國家／出發地／天數）下的行程
+    var cnt={};function calcCnt(){cnt={};pool().filter(okP).forEach(function(p){p.days.forEach(function(o){if(!cnt[o])cnt[o]={n:0,mn:Infinity};cnt[o].n++;if(p.m[o]<cnt[o].mn)cnt[o].mn=p.m[o]})})}
     var holDay={};hols.forEach(function(h){for(var o=h.s;o<=h.e;o++)holDay[o]=h.n});
     function mStart(o){var d=dOf(o);return off(d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-01')}
     function nextM(s){var d=dOf(s);d=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1));return Math.round((d-B)/864e5)}
@@ -342,6 +349,7 @@ html,body{overscroll-behavior:none;max-width:100%}
         h+='<button class="'+cls+'" '+(ok?'data-o="'+o+'"':'tabindex="-1"')+' title="'+(holDay[o]||'')+'">'+dd+(ok?'<small>$'+(c.mn>=10000?(c.mn/10000).toFixed(1)+'萬':money(c.mn))+'</small>':'')+'</button>'}
       return h+'</div>'}
     function drawCal(){
+      calcCnt();
       if(calM==null)calM=mStart(tmp.ds!=null?tmp.ds:TODAY);
       $('hols').innerHTML=hols.map(function(h,i){return '<button data-i="'+i+'" aria-pressed="'+(tmp.hol===h)+'"><b>'+esc(h.n)+'</b><small>'+md(h.s)+'–'+md(h.e)+'</small></button>'}).join('');
       var mob=innerWidth<=760;$('m1').innerHTML=month(calM,true,mob);$('m2').innerHTML=mob?'':month(nextM(calM),false,true);
@@ -389,9 +397,7 @@ html,body{overscroll-behavior:none;max-width:100%}
       $('vTo').textContent=st.q?'「'+st.q+'」':(st.to||'想去哪裡？');$('vTo').classList.toggle('ph',!st.to&&!st.q);
       $('vDate').textContent=st.ds==null?'選擇日期或連假':(st.hol?st.hol.n+' ':'')+mdwy(st.ds)+(st.de!==st.ds?' – '+mdwy(st.de):'');$('vDate').classList.toggle('ph',st.ds==null);
       var rows=[];pool().forEach(function(p){
-        if(st.from&&!(st.from==='其他'?!p.from.length:p.from.indexOf(st.from)>=0))return;
-        if(st.to&&cts(p).indexOf(st.to)<0)return;if(st.q&&p.txt.indexOf(st.q.toLowerCase())<0)return;
-        if(st.dur){if(p.dmin==null)return;var a=p.dmin,b=p.dmax;if(st.dur==='s'&&!(a<=4&&b>=3))return;if(st.dur==='m'&&!(a<=6&&b>=5))return;if(st.dur==='l'&&!(b>=7))return}
+        if(!okP(p))return;
         var ds=st.ds==null?p.days:p.days.filter(function(o){return o>=st.ds&&o<=st.de});if(!ds.length)return;
         var mn=Infinity;ds.forEach(function(o){if(p.m[o]<mn)mn=p.m[o]});rows.push({p:p,ds:ds,mn:mn})});
       if(st.sort==='price')rows.sort(function(a,b){return a.mn-b.mn});else if(st.sort==='soon')rows.sort(function(a,b){return a.ds[0]-b.ds[0]||a.mn-b.mn});else rows.sort(function(a,b){return a.p.rank-b.p.rank});
