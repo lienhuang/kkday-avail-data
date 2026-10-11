@@ -206,6 +206,32 @@ html,body{overscroll-behavior:none;max-width:100%}
   .ft{border-top:0;padding-top:2px}
   .px{font-size:11px}.px b{font-size:18px}
 }
+/* 翻頁：框內不捲動（電腦與手機都一樣，避免滑動卡在框裡） */
+.wrap{height:auto}
+.scr{overflow:visible;flex:none;padding-bottom:16px}
+.more{display:none!important}
+.pager{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0 0}
+.pager button{border:1px solid var(--b);color:var(--bd);background:#fff;border-radius:999px;padding:8px 20px;font-weight:700}
+.pager button:disabled{border-color:var(--line);color:#C5CED1;cursor:default}
+.pager span{font-size:13px;color:var(--ink2);min-width:90px;text-align:center}.pager span b{color:var(--ink)}
+@media (min-width:521px){.list{grid-template-columns:repeat(3,1fr)}.nm{min-height:44px}.dates{max-height:25px;overflow:hidden}}
+@media (min-width:769px){
+  .mini .hero{padding:22px 18px 18px;margin-bottom:20px}
+  .mini .hero h1,.mini .form,.mini .opt{display:revert}
+  .mini .form{display:grid}.mini .opt{display:flex}
+  .mini .sum{display:none}
+  .list{grid-template-columns:repeat(3,1fr)}
+  .nm{min-height:44px}
+  .dates{max-height:25px;overflow:hidden}
+}
+@media (max-width:520px){
+  /* 展開搜尋時變成「搜尋畫面」，按搜尋再回到結果 */
+  body:not(.mini) .chips,body:not(.mini) .bar,body:not(.mini) .scr{display:none}
+  .pic{aspect-ratio:auto;height:112px}
+  .nm{min-height:36px;-webkit-line-clamp:2}
+  .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .pager{margin-top:12px;gap:8px}.pager button{padding:8px 16px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -237,6 +263,7 @@ html,body{overscroll-behavior:none;max-width:100%}
   <div class="scr" id="scr">
   <div class="list" id="list"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
   <button class="more" id="more" style="display:none"></button>
+  <div class="pager" id="pager"><button id="prev">‹ 上一頁</button><span id="pgi"></span><button id="next">下一頁 ›</button></div>
   <p class="note" id="note"></p>
   </div>
 </div>
@@ -248,6 +275,7 @@ html,body{overscroll-behavior:none;max-width:100%}
   var CITY=['桃園','台北','松山','台中','高雄','台南','花蓮','金門','基隆'];
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function tp(){var o={};new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(x){o[x.type]=x.value});return o}
+  function PCM(){return innerWidth>768}
   function MOB(){return matchMedia('(max-width:520px)').matches}
   function start(D){if(MOB())document.body.classList.add('mini');D.p=D.p.filter(function(x){return !/KOL/i.test(x.n)});
     var B=new Date(D.base+'T00:00:00Z'),t=tp();
@@ -267,7 +295,7 @@ html,body{overscroll-behavior:none;max-width:100%}
     var LAST=Math.max.apply(0,D.p.map(function(p){return p.days[p.days.length-1]}));
     // 狀態：f=表單暫存，s=已套用的搜尋
     var COV={};
-    var st={c:'全部',from:'',to:'',q:'',ds:null,de:null,hol:null,dur:'',sort:'hot',lim:PAGE};
+    var st={pg:0,kp:false,c:'全部',from:'',to:'',q:'',ds:null,de:null,hol:null,dur:'',sort:'hot',lim:PAGE};
     var tmp={ds:null,de:null,hol:null},calM=null;
     var DUR=[['','不限'],['s','3–4 天'],['m','5–6 天'],['l','7 天以上']];
     // 類別分頁
@@ -322,12 +350,16 @@ html,body{overscroll-behavior:none;max-width:100%}
     $('dClr').onclick=function(e){e.stopPropagation();tmp={ds:null,de:null,hol:null};applyDate()};
     $('go').onclick=function(){closeAll();render();if(MOB())document.body.classList.add('mini')};
     $('sort').onclick=function(e){var b=e.target.closest('button');if(!b)return;st.sort=b.dataset.s;st.lim=PAGE;render()};
-    $('more').onclick=function(){st.lim+=PAGE;render()};
+    $('more').onclick=function(){st.lim+=PAGE;st.kp=true;render()};
+    function pgr(n){var t=Math.max(1,Math.ceil(n/6));if(st.pg>t-1)st.pg=t-1;$('prev').disabled=st.pg===0;$('next').disabled=st.pg>=t-1;$('pgi').innerHTML='第 <b>'+(st.pg+1)+'</b> / '+t+' 頁'}
+    function toTop(){try{$('cnt').scrollIntoView({block:'start'})}catch(e){}}
+    $('prev').onclick=function(){if(st.pg>0){st.pg--;st.kp=true;render();toTop()}};
+    $('next').onclick=function(){st.pg++;st.kp=true;render();toTop()};
     var S=$('scr'),BD=document.body;
     S.addEventListener('scroll',function(){
       if(S.scrollTop>40&&!BD.classList.contains('mini')){closeAll();BD.classList.add('mini')}
       else if(!MOB()&&S.scrollTop<=0&&BD.classList.contains('mini'))BD.classList.remove('mini');
-      if($('more').style.display!=='none'&&S.scrollTop+S.clientHeight>S.scrollHeight-300){st.lim+=PAGE;render()}
+      if($('more').style.display!=='none'&&S.scrollTop+S.clientHeight>S.scrollHeight-300){st.lim+=PAGE;st.kp=true;render()}
     },{passive:true});
     $('sum').onclick=function(){S.scrollTop=0;BD.classList.remove('mini')};
     function drawChips(){var cc={};D.p.forEach(function(p){cts(p).forEach(function(x){cc[x]=(cc[x]||0)+1})});
@@ -340,6 +372,7 @@ html,body{overscroll-behavior:none;max-width:100%}
       st.lim=PAGE;render()};
     $('list').onclick=function(e){if(e.target.id==='reset'){st.from='';st.to='';st.q='';st.ds=st.de=st.hol=null;st.dur='';st.c='全部';render()}};
     function render(){
+      if(!st.kp)st.pg=0;st.kp=false;
       drawChips();
       if(st.lim===PAGE){$('scr').scrollTop=0;if(!MOB())document.body.classList.remove('mini')}
       setTimeout(function(){$('sumT').textContent=[$('vFrom').textContent+'出發',$('vTo').classList.contains('ph')?'不限目的地':$('vTo').textContent,$('vDate').classList.contains('ph')?'不限日期':$('vDate').textContent].join('・')},0);
@@ -359,14 +392,14 @@ html,body{overscroll-behavior:none;max-width:100%}
       var cond=[];if(st.from)cond.push(st.from+'出發');if(st.to)cond.push(st.to);if(st.q)cond.push('「'+st.q+'」');if(st.ds!=null)cond.push(st.hol?st.hol.n:mdw(st.ds)+(st.de!==st.ds?'–'+mdw(st.de):''));
       $('cnt').innerHTML='共 <b>'+rows.length+'</b> 個行程可以訂'+(cond.length?'<span>'+esc(cond.join('・'))+'</span>':'');
       var L=$('list');
-      if(!rows.length){L.innerHTML='<div class="empty"><b>這個條件目前沒有可以訂的行程</b>換個出發日期或目的地看看吧！<br><button id="reset">清除所有條件</button></div>';$('more').style.display='none';return}
-      L.innerHTML=rows.slice(0,st.lim).map(function(r){var p=r.p,ds=r.ds;
+      if(!rows.length){L.innerHTML='<div class="empty"><b>這個條件目前沒有可以訂的行程</b>換個出發日期或目的地看看吧！<br><button id="reset">清除所有條件</button></div>';$('more').style.display='none';pgr(0);return}
+      var PP=6,a0=st.pg*PP,a1=a0+PP;L.innerHTML=rows.slice(a0,a1).map(function(r){var p=r.p,ds=r.ds;
         var when=ds.length===1?'<b>'+mdw(ds[0])+'</b> 出發':'最快 <b>'+mdw(ds[0])+'</b> 出發，'+(st.ds!=null?'這段期間':'到 '+md(ds[ds.length-1])+'，')+'共 '+ds.length+' 天可選';
         var dt=(st.ds!=null||ds.length<=3)?'<div class="dates">'+ds.slice(0,6).map(function(o){return '<span>'+mdw(o)+'<b>$'+money(p.m[o])+'</b></span>'}).join('')+(ds.length>6?'<span>＋'+(ds.length-6)+' 天</span>':'')+'</div>':'';
         var im=COV[p.id];var when2=(st.ds!=null&&ds.length>1?mdw(ds[0])+' 等 '+ds.length+' 天':(st.ds!=null?'':'最快 ')+mdw(ds[0]))+' 出發';
         return '<a class="card" href="https://www.kkday.com/zh-tw/product/'+p.id+(UTM?'?'+UTM:'')+'" target="_top"><div class="pic'+(im?'':' noimg c-'+p.c)+'">'+(im?'<img src="https://image.kkday.com/v2/image/get/w_600%2Cc_fit/'+im+'" alt="" loading="lazy" onerror="this.remove()">':'<span class="ic">'+p.c+'</span>')+'<span class="cat c-'+p.c+'">'+p.c+'</span></div><div class="bd"><div class="meta">'+(p.ct?'<span>'+esc(p.ct)+'</span>':'')+(p.dy?'<span class="dot">'+esc(p.dy)+'</span>':'')+(p.from.length?'<span class="dot">'+esc(p.from.join('／'))+'出發</span>':p.port?'<span class="dot">'+esc(p.port)+'</span>':'')+'</div>'+
           '<p class="nm">'+esc(p.n)+'</p><div class="when">'+when+'</div><div class="when2">'+when2+'</div>'+dt+'<div class="ft"><div class="px">TWD<b>'+money(r.mn)+'</b>起</div><span class="cta">看行程 ›</span></div></div></a>'}).join('');
-      $('more').style.display=rows.length>st.lim?'block':'none';$('more').textContent='看更多行程（還有 '+(rows.length-st.lim)+' 個）';
+      $('more').style.display='none';pgr(rows.length);$('more').textContent='看更多行程（還有 '+(rows.length-st.lim)+' 個）';
     }
     $('note').textContent='價格為每日更新的參考售價（資料日期 '+D.asof.replace(/-/g,'/')+'），實際價格、出發日期與名額以行程頁為準。';
     render();
