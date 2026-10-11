@@ -148,6 +148,32 @@ html,body{height:100%;overflow:hidden}
 .mini .hero h1,.mini .form,.mini .opt{display:none}
 .mini .sum{display:flex}
 @media (max-width:768px){.pop{position:fixed;left:8px;right:8px;top:8px;bottom:auto;max-height:calc(100% - 16px);overflow-y:auto;overscroll-behavior:contain;z-index:50}}
+/* 手機防止左右整塊晃動：只允許上下滑，橫向只留給「旅遊天數」「連假快選」兩排 */
+html,body{overscroll-behavior:none;max-width:100%}
+.wrap{overflow-x:hidden}
+.hero,.bar,.scr,.pop{touch-action:pan-y}
+.opt,.hols{touch-action:pan-x;overscroll-behavior-x:contain}
+@media (max-width:520px){.tabs{overflow:hidden;touch-action:manipulation}}
+/* 手機：預設收合搜尋、卡片精簡，一屏約兩個商品 */
+@media (max-width:520px){
+  .wrap{padding-top:8px}
+  .mini .hero{padding:8px;margin-bottom:8px;border-radius:14px}
+  .mini .tabs button{flex-direction:row;gap:4px;padding:8px 2px 7px;font-size:13px}
+  .mini .tabs button svg{width:17px;height:17px}
+  .sum{padding:9px 12px}
+  .bar{flex-wrap:nowrap;margin:0 2px 8px}
+  .cnt{font-size:14px;white-space:nowrap}.cnt b{font-size:17px}.cnt span{display:none}
+  .sort{flex:none}.sort button{padding:4px 8px;font-size:12px}
+  .list{gap:10px}
+  .card{padding:12px}
+  .meta{margin-bottom:4px}
+  .nm{margin-bottom:6px;font-size:14px}
+  .when{margin-bottom:6px;font-size:12px}
+  .dates{margin:0 0 6px}
+  .ft{padding-top:8px}
+  .px b{font-size:20px}
+  .cta{padding:6px 14px;font-size:13px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -189,7 +215,8 @@ html,body{height:100%;overflow:hidden}
   var CITY=['桃園','台北','松山','台中','高雄','台南','花蓮','金門','基隆'];
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function tp(){var o={};new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(x){o[x.type]=x.value});return o}
-  function start(D){D.p=D.p.filter(function(x){return !/KOL/i.test(x.n)});
+  function MOB(){return matchMedia('(max-width:520px)').matches}
+  function start(D){if(MOB())document.body.classList.add('mini');D.p=D.p.filter(function(x){return !/KOL/i.test(x.n)});
     var B=new Date(D.base+'T00:00:00Z'),t=tp();
     var TODAY=Math.round((Date.UTC(+t.year,+t.month-1,+t.day)-B.getTime())/864e5),NOW=(+t.hour)*60+(+t.minute);
     var dOf=function(o){return new Date(B.getTime()+o*864e5)},off=function(s){return Math.round((new Date(s+'T00:00:00Z')-B)/864e5)};
@@ -259,19 +286,19 @@ html,body{height:100%;overflow:hidden}
     function applyDate(){st.ds=tmp.ds;st.de=tmp.ds==null?null:(tmp.de==null?tmp.ds:tmp.de);st.hol=tmp.hol;st.lim=PAGE;closeAll();render()}
     $('dOk').onclick=function(e){e.stopPropagation();applyDate()};
     $('dClr').onclick=function(e){e.stopPropagation();tmp={ds:null,de:null,hol:null};applyDate()};
-    $('go').onclick=function(){closeAll();render();$('cnt').scrollIntoView({behavior:'smooth',block:'start'})};
+    $('go').onclick=function(){closeAll();render();if(MOB())document.body.classList.add('mini')};
     $('sort').onclick=function(e){var b=e.target.closest('button');if(!b)return;st.sort=b.dataset.s;st.lim=PAGE;render()};
     $('more').onclick=function(){st.lim+=PAGE;render()};
     var S=$('scr'),BD=document.body;
     S.addEventListener('scroll',function(){
       if(S.scrollTop>40&&!BD.classList.contains('mini')){closeAll();BD.classList.add('mini')}
-      else if(S.scrollTop<=0&&BD.classList.contains('mini'))BD.classList.remove('mini');
+      else if(!MOB()&&S.scrollTop<=0&&BD.classList.contains('mini'))BD.classList.remove('mini');
       if($('more').style.display!=='none'&&S.scrollTop+S.clientHeight>S.scrollHeight-300){st.lim+=PAGE;render()}
     },{passive:true});
     $('sum').onclick=function(){S.scrollTop=0;BD.classList.remove('mini')};
     $('list').onclick=function(e){if(e.target.id==='reset'){st.from='';st.to='';st.q='';st.ds=st.de=st.hol=null;st.dur='';st.c='全部';render()}};
     function render(){
-      if(st.lim===PAGE){$('scr').scrollTop=0;document.body.classList.remove('mini')}
+      if(st.lim===PAGE){$('scr').scrollTop=0;if(!MOB())document.body.classList.remove('mini')}
       setTimeout(function(){$('sumT').textContent=[$('vFrom').textContent+'出發',$('vTo').classList.contains('ph')?'不限目的地':$('vTo').textContent,$('vDate').classList.contains('ph')?'不限日期':$('vDate').textContent].join('・')},0);
       [].forEach.call($('tabs').children,function(b){b.setAttribute('aria-selected',b.dataset.c===st.c)});
       [].forEach.call($('sort').children,function(b){b.setAttribute('aria-pressed',b.dataset.s===st.sort)});
