@@ -425,7 +425,7 @@ html,body{overscroll-behavior:none;max-width:100%}
       if(q.c&&['全部','機票','機加酒','郵輪'].indexOf(q.c)>=0)st.c=q.c;
       if(q.to)st.to=q.to;
       if(q.hol){var hs=hols.filter(function(x){return x.e>=TODAY+2}),x=hs[(+q.hol||1)-1];if(x){st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
-      if(q.go){setTimeout(function(){try{$('chips').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}},300)}})();
+      if(q.go){setTimeout(function(){try{document.querySelector('.wrap').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}},300)}})();
     render();
     fetch('kk-covers.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():{}}).then(function(c){COV=c||{};render()}).catch(function(){});
   }
