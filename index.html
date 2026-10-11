@@ -358,7 +358,7 @@ html,body{overscroll-behavior:none;max-width:100%}
       if(b.dataset.nav){calM=+b.dataset.nav>0?nextM(calM):prevM(calM);drawCal();return}
       if(b.dataset.i!=null){var h=hols[+b.dataset.i];tmp={ds:h.s,de:h.e,hol:h};applyDate();return}
       if(b.dataset.o!=null){var o=+b.dataset.o;tmp.hol=null;if(tmp.ds==null||tmp.de!=null){tmp.ds=o;tmp.de=null}else if(o<tmp.ds){tmp.de=tmp.ds;tmp.ds=o}else tmp.de=o;drawCal();if(tmp.de!=null)setTimeout(applyDate,250);return}};
-    function applyDate(){st.ds=tmp.ds;st.de=tmp.ds==null?null:(tmp.de==null?tmp.ds:tmp.de);st.hol=tmp.hol;st.lim=PAGE;closeAll();render()}
+    function applyDate(){if(tmp.ds!=null)st.sort='price';st.ds=tmp.ds;st.de=tmp.ds==null?null:(tmp.de==null?tmp.ds:tmp.de);st.hol=tmp.hol;st.lim=PAGE;closeAll();render()}
     $('dOk').onclick=function(e){e.stopPropagation();applyDate()};
     $('dClr').onclick=function(e){e.stopPropagation();tmp={ds:null,de:null,hol:null};applyDate()};
     $('go').onclick=function(){closeAll();render();if(MOB())document.body.classList.add('mini')};
@@ -380,7 +380,7 @@ html,body{overscroll-behavior:none;max-width:100%}
       $('chips').innerHTML='<span class="t">快速逛</span>'+hols.map(function(h,i){return [h,i]}).filter(function(x){return x[0].e>=TODAY+2}).slice(0,3).map(function(x){var h=x[0],i=x[1];return '<button class="hl" data-h="'+i+'" aria-pressed="'+(st.hol===h)+'">'+esc(h.n)+'<small>'+md(h.s)+'–'+md(h.e)+'</small></button>'}).join('')+
         top.map(function(c){return '<button data-t="'+esc(c)+'" aria-pressed="'+(st.to===c)+'">'+esc(c)+'</button>'}).join('')}
     $('chips').onclick=function(e){var b=e.target.closest('button');if(!b)return;
-      if(b.dataset.h!=null){var x=hols[+b.dataset.h];if(st.hol===x){st.ds=st.de=st.hol=null}else{st.ds=x.s;st.de=x.e;st.hol=x}}
+      if(b.dataset.h!=null){var x=hols[+b.dataset.h];if(st.hol===x){st.ds=st.de=st.hol=null}else{st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
       else{var t=b.dataset.t;st.to=st.to===t?'':t;st.q=''}
       st.lim=PAGE;render()};
     $('list').onclick=function(e){if(e.target.id==='reset'){st.from='';st.to='';st.q='';st.ds=st.de=st.hol=null;st.dur='';st.c='全部';render()}};
