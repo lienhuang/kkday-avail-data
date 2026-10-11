@@ -272,6 +272,7 @@ html,body{overscroll-behavior:none;max-width:100%}
 </div>
 <script>
 (function(){
+  var HIDE=[546506]; // 不給消費者看的商品 ID（例：546506 旅展現場下單專用）
   var SRC='kk-avail.json',UTM='',PAGE=12,W=['日','一','二','三','四','五','六'];
   var $=function(id){return document.getElementById(id)};
   var ICON={'全部':'<path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/><circle cx="12" cy="12" r="9"/>','機票':'<path d="M2.5 19h19M3 13l4 1 4-4-7-5 2-1 9 4 3-2a2 2 0 0 1 2 3l-14 7-3-3z"/>','機加酒':'<path d="M3 21V7l9-4 9 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01"/>','郵輪':'<path d="M2 20c2 1 4 1 6 0s4-1 6 0 4 1 6 0M4 17l-1-5h18l-1 5M6 12V8h12v4M10 8V5h4v3"/>'};
@@ -280,7 +281,7 @@ html,body{overscroll-behavior:none;max-width:100%}
   function tp(){var o={};new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(x){o[x.type]=x.value});return o}
   function PCM(){return innerWidth>768}
   function MOB(){return matchMedia('(max-width:520px)').matches}
-  function start(D){if(MOB())document.body.classList.add('mini');D.p=D.p.filter(function(x){return !/KOL/i.test(x.n)});
+  function start(D){if(MOB())document.body.classList.add('mini');D.p=D.p.filter(function(x){return !/KOL/i.test(x.n)&&HIDE.indexOf(x.id)<0});
     var B=new Date(D.base+'T00:00:00Z'),t=tp();
     var TODAY=Math.round((Date.UTC(+t.year,+t.month-1,+t.day)-B.getTime())/864e5),NOW=(+t.hour)*60+(+t.minute);
     var dOf=function(o){return new Date(B.getTime()+o*864e5)},off=function(s){return Math.round((new Date(s+'T00:00:00Z')-B)/864e5)};
