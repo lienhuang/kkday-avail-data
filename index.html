@@ -286,6 +286,7 @@ html,body{overscroll-behavior:none;max-width:100%}
     var TODAY=Math.round((Date.UTC(+t.year,+t.month-1,+t.day)-B.getTime())/864e5),NOW=(+t.hour)*60+(+t.minute);
     var dOf=function(o){return new Date(B.getTime()+o*864e5)},off=function(s){return Math.round((new Date(s+'T00:00:00Z')-B)/864e5)};
     var md=function(o){var d=dOf(o);return (d.getUTCMonth()+1)+'/'+d.getUTCDate()},mdw=function(o){return md(o)+'('+W[dOf(o).getUTCDay()]+')'};
+    var Y0=dOf(TODAY).getUTCFullYear(),mdy=function(o){var y=dOf(o).getUTCFullYear();return (y!==Y0?y+'/':'')+md(o)},mdwy=function(o){return mdy(o)+'('+W[dOf(o).getUTCDay()]+')'};
     var money=function(n){return n.toLocaleString('zh-TW')};
     var cts=function(p){return p.ct?p.ct.split('、'):[]};
     D.p.forEach(function(p,i){var m={};p.rank=i;p.pk.forEach(function(k){var E=TODAY+(k.cd||0)+(k.em!=null&&NOW>k.em?1:0);
@@ -386,7 +387,7 @@ html,body{overscroll-behavior:none;max-width:100%}
       [].forEach.call($('opt').querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.dataset.d===st.dur)});
       $('vFrom').textContent=st.from||'不限';
       $('vTo').textContent=st.q?'「'+st.q+'」':(st.to||'想去哪裡？');$('vTo').classList.toggle('ph',!st.to&&!st.q);
-      $('vDate').textContent=st.ds==null?'選擇日期或連假':(st.hol?st.hol.n+' ':'')+mdw(st.ds)+(st.de!==st.ds?' – '+mdw(st.de):'');$('vDate').classList.toggle('ph',st.ds==null);
+      $('vDate').textContent=st.ds==null?'選擇日期或連假':(st.hol?st.hol.n+' ':'')+mdwy(st.ds)+(st.de!==st.ds?' – '+mdwy(st.de):'');$('vDate').classList.toggle('ph',st.ds==null);
       var rows=[];pool().forEach(function(p){
         if(st.from&&!(st.from==='其他'?!p.from.length:p.from.indexOf(st.from)>=0))return;
         if(st.to&&cts(p).indexOf(st.to)<0)return;if(st.q&&p.txt.indexOf(st.q.toLowerCase())<0)return;
@@ -405,9 +406,9 @@ html,body{overscroll-behavior:none;max-width:100%}
           var mn=Infinity;p.days.forEach(function(o){if(p.m[o]<mn)mn=p.m[o]});pg.push({p:p,ds:p.days,mn:mn,f:false,rec:true})})}
       if(!rows.length)$('cnt').innerHTML='沒有符合條件的行程<span>，先看看這些熱門行程</span> <button id="reset" class="rst">清除條件</button>';
       L.innerHTML=pg.map(function(r){var p=r.p,ds=r.ds;
-        var when=ds.length===1?'<b>'+mdw(ds[0])+'</b> 出發':'最快 <b>'+mdw(ds[0])+'</b> 出發，'+(r.f?'這段期間':'到 '+md(ds[ds.length-1])+'，')+'共 '+ds.length+' 天可選';
-        var dt=(r.f||ds.length<=3)?'<div class="dates">'+ds.slice(0,6).map(function(o){return '<span>'+mdw(o)+'<b>$'+money(p.m[o])+'</b></span>'}).join('')+(ds.length>6?'<span>＋'+(ds.length-6)+' 天</span>':'')+'</div>':'';
-        var im=COV[p.id];var when2=(r.f&&ds.length>1?mdw(ds[0])+' 等 '+ds.length+' 天':(r.f?'':'最快 ')+mdw(ds[0]))+' 出發';
+        var when=ds.length===1?'<b>'+mdwy(ds[0])+'</b> 出發':'最快 <b>'+mdwy(ds[0])+'</b> 出發，'+(r.f?'這段期間':'到 '+mdy(ds[ds.length-1])+'，')+'共 '+ds.length+' 天可選';
+        var dt=(r.f||ds.length<=3)?'<div class="dates">'+ds.slice(0,6).map(function(o){return '<span>'+mdwy(o)+'<b>$'+money(p.m[o])+'</b></span>'}).join('')+(ds.length>6?'<span>＋'+(ds.length-6)+' 天</span>':'')+'</div>':'';
+        var im=COV[p.id];var when2=(r.f&&ds.length>1?mdwy(ds[0])+' 等 '+ds.length+' 天':(r.f?'':'最快 ')+mdwy(ds[0]))+' 出發';
         return '<a class="card" href="https://www.kkday.com/zh-tw/product/'+p.id+(UTM?'?'+UTM:'')+'" target="_top"><div class="pic'+(im?'':' noimg c-'+p.c)+'">'+(im?'<img src="https://image.kkday.com/v2/image/get/w_600%2Cc_fit/'+im+'" alt="" loading="lazy" onerror="this.remove()">':'<span class="ic">'+p.c+'</span>')+'<span class="cat c-'+p.c+'">'+p.c+'</span>'+(r.rec?'<span class="rec">你可能也喜歡</span>':'')+'</div><div class="bd"><div class="meta">'+(p.ct?'<span>'+esc(p.ct)+'</span>':'')+(p.dy?'<span class="dot">'+esc(p.dy)+'</span>':'')+(p.from.length?'<span class="dot">'+esc(p.from.join('／'))+'出發</span>':p.port?'<span class="dot">'+esc(p.port)+'</span>':'')+'</div>'+
           '<p class="nm">'+esc(p.n)+'</p><div class="when">'+when+'</div><div class="when2">'+when2+'</div>'+dt+'<div class="ft"><div class="px">TWD<b>'+money(r.mn)+'</b>起</div><span class="cta">看行程 ›</span></div></div></a>'}).join('');
       $('more').style.display='none';pgr(rows.length);$('more').textContent='看更多行程（還有 '+(rows.length-st.lim)+' 個）';
