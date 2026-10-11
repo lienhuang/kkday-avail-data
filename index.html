@@ -420,6 +420,12 @@ html,body{overscroll-behavior:none;max-width:100%}
       $('more').style.display='none';pgr(rows.length);$('more').textContent='看更多行程（還有 '+(rows.length-st.lim)+' 個）';
     }
     $('note').textContent='價格為每日更新的參考售價（資料日期 '+D.asof.replace(/-/g,'/')+'），實際價格、出發日期與名額以行程頁為準。';
+    // 網址參數預設條件（給活動頁漂浮小工具用）：?c=機票&to=日本&hol=1（1=最近連假、2=下一個）&go=1（載入後把活動頁捲到結果區；捲到「快速逛」這列，讓活動頁固定的頂部選單蓋住它而不是蓋住結果）
+    (function(){var q={};location.search.replace(/^\?/,'').split('&').forEach(function(s){var kv=s.split('=');if(kv[0])q[decodeURIComponent(kv[0])]=decodeURIComponent((kv[1]||'').replace(/\+/g,' '))});
+      if(q.c&&['全部','機票','機加酒','郵輪'].indexOf(q.c)>=0)st.c=q.c;
+      if(q.to)st.to=q.to;
+      if(q.hol){var hs=hols.filter(function(x){return x.e>=TODAY+2}),x=hs[(+q.hol||1)-1];if(x){st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
+      if(q.go){setTimeout(function(){try{$('chips').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}},300)}})();
     render();
     fetch('kk-covers.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():{}}).then(function(c){COV=c||{};render()}).catch(function(){});
   }
