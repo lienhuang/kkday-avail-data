@@ -174,6 +174,38 @@ html,body{overscroll-behavior:none;max-width:100%}
   .px b{font-size:20px}
   .cta{padding:6px 14px;font-size:13px}
 }
+/* 快速逛 + 圖片卡片（參考 OTA 手機版） */
+.chips{flex:none;display:flex;gap:8px;align-items:center;overflow-x:auto;scrollbar-width:none;margin:0 0 10px;padding:2px;touch-action:pan-x;overscroll-behavior-x:contain}
+.chips::-webkit-scrollbar{display:none}
+.chips .t{flex:none;font-size:13px;font-weight:700;color:var(--ink2)}
+.chips button{flex:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;background:#fff;white-space:nowrap}
+.chips button small{margin-left:4px;font-size:11px;color:var(--ink3)}
+.chips button.hl{border-color:#FFD2C2;background:var(--os);color:#C2410C;font-weight:700}
+.chips button[aria-pressed="true"]{border-color:var(--b);background:var(--b);color:#fff}
+.chips button[aria-pressed="true"] small{color:#fff}
+.card{padding:0;overflow:hidden}
+.pic{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#BFEFF2,#E6F8FA);overflow:hidden}
+.pic img{display:block;width:100%;height:100%;object-fit:cover}
+.pic .cat{position:absolute;left:8px;top:8px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.pic.noimg.c-機加酒{background:linear-gradient(135deg,#FFE7A8,#FFF6DD)}
+.pic.noimg.c-郵輪{background:linear-gradient(135deg,#D5D3FF,#F0EFFF)}
+.pic .ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:rgba(14,124,133,.35)}
+.bd{display:flex;flex-direction:column;flex:1;padding:12px 14px 14px}
+.meta .cat{display:none}
+.when2{display:none}
+@media (max-width:520px){
+  .chips{margin-bottom:8px}
+  .list{grid-template-columns:1fr 1fr;gap:10px}
+  .pic{aspect-ratio:3/2}
+  .pic .cat{left:6px;top:6px;font-size:11px}
+  .bd{padding:8px 10px 10px}
+  .meta{font-size:11px;margin-bottom:2px}.meta .dot{display:none}
+  .nm{font-size:13px;line-height:1.4;margin-bottom:4px}
+  .when,.dates,.cta{display:none}
+  .when2{display:block;font-size:11px;color:var(--ink2);margin-bottom:2px}.when2 b{color:var(--ink)}
+  .ft{border-top:0;padding-top:2px}
+  .px{font-size:11px}.px b{font-size:18px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -199,6 +231,7 @@ html,body{overscroll-behavior:none;max-width:100%}
     </div>
   </section>
 
+  <div class="chips" id="chips" aria-label="快速逛"></div>
   <div class="bar"><div class="cnt" id="cnt" aria-live="polite"></div>
     <div class="sort" id="sort" role="group" aria-label="排序"><button data-s="hot" aria-pressed="true">熱門</button><button data-s="price" aria-pressed="false">價格低→高</button><button data-s="soon" aria-pressed="false">最快出發</button></div></div>
   <div class="scr" id="scr">
@@ -233,6 +266,7 @@ html,body{overscroll-behavior:none;max-width:100%}
     var hols=D.hol.map(function(h){return{n:h.n,s:Math.max(off(h.a),TODAY),e:off(h.b)}}).filter(function(h){return h.e>=TODAY});
     var LAST=Math.max.apply(0,D.p.map(function(p){return p.days[p.days.length-1]}));
     // 狀態：f=表單暫存，s=已套用的搜尋
+    var COV={};
     var st={c:'全部',from:'',to:'',q:'',ds:null,de:null,hol:null,dur:'',sort:'hot',lim:PAGE};
     var tmp={ds:null,de:null,hol:null},calM=null;
     var DUR=[['','不限'],['s','3–4 天'],['m','5–6 天'],['l','7 天以上']];
@@ -296,8 +330,17 @@ html,body{overscroll-behavior:none;max-width:100%}
       if($('more').style.display!=='none'&&S.scrollTop+S.clientHeight>S.scrollHeight-300){st.lim+=PAGE;render()}
     },{passive:true});
     $('sum').onclick=function(){S.scrollTop=0;BD.classList.remove('mini')};
+    function drawChips(){var cc={};D.p.forEach(function(p){cts(p).forEach(function(x){cc[x]=(cc[x]||0)+1})});
+      var top=Object.keys(cc).sort(function(a,b){return cc[b]-cc[a]}).slice(0,6);
+      $('chips').innerHTML='<span class="t">快速逛</span>'+hols.map(function(h,i){return [h,i]}).filter(function(x){return x[0].e>=TODAY+2}).slice(0,3).map(function(x){var h=x[0],i=x[1];return '<button class="hl" data-h="'+i+'" aria-pressed="'+(st.hol===h)+'">'+esc(h.n)+'<small>'+md(h.s)+'–'+md(h.e)+'</small></button>'}).join('')+
+        top.map(function(c){return '<button data-t="'+esc(c)+'" aria-pressed="'+(st.to===c)+'">'+esc(c)+'</button>'}).join('')}
+    $('chips').onclick=function(e){var b=e.target.closest('button');if(!b)return;
+      if(b.dataset.h!=null){var x=hols[+b.dataset.h];if(st.hol===x){st.ds=st.de=st.hol=null}else{st.ds=x.s;st.de=x.e;st.hol=x}}
+      else{var t=b.dataset.t;st.to=st.to===t?'':t;st.q=''}
+      st.lim=PAGE;render()};
     $('list').onclick=function(e){if(e.target.id==='reset'){st.from='';st.to='';st.q='';st.ds=st.de=st.hol=null;st.dur='';st.c='全部';render()}};
     function render(){
+      drawChips();
       if(st.lim===PAGE){$('scr').scrollTop=0;if(!MOB())document.body.classList.remove('mini')}
       setTimeout(function(){$('sumT').textContent=[$('vFrom').textContent+'出發',$('vTo').classList.contains('ph')?'不限目的地':$('vTo').textContent,$('vDate').classList.contains('ph')?'不限日期':$('vDate').textContent].join('・')},0);
       [].forEach.call($('tabs').children,function(b){b.setAttribute('aria-selected',b.dataset.c===st.c)});
@@ -320,12 +363,14 @@ html,body{overscroll-behavior:none;max-width:100%}
       L.innerHTML=rows.slice(0,st.lim).map(function(r){var p=r.p,ds=r.ds;
         var when=ds.length===1?'<b>'+mdw(ds[0])+'</b> 出發':'最快 <b>'+mdw(ds[0])+'</b> 出發，'+(st.ds!=null?'這段期間':'到 '+md(ds[ds.length-1])+'，')+'共 '+ds.length+' 天可選';
         var dt=(st.ds!=null||ds.length<=3)?'<div class="dates">'+ds.slice(0,6).map(function(o){return '<span>'+mdw(o)+'<b>$'+money(p.m[o])+'</b></span>'}).join('')+(ds.length>6?'<span>＋'+(ds.length-6)+' 天</span>':'')+'</div>':'';
-        return '<a class="card" href="https://www.kkday.com/zh-tw/product/'+p.id+(UTM?'?'+UTM:'')+'" target="_top"><div class="meta"><span class="cat c-'+p.c+'">'+p.c+'</span>'+(p.ct?'<span>'+esc(p.ct)+'</span>':'')+(p.dy?'<span class="dot">'+esc(p.dy)+'</span>':'')+(p.from.length?'<span class="dot">'+esc(p.from.join('／'))+'出發</span>':p.port?'<span class="dot">'+esc(p.port)+'</span>':'')+'</div>'+
-          '<p class="nm">'+esc(p.n)+'</p><div class="when">'+when+'</div>'+dt+'<div class="ft"><div class="px">TWD<b>'+money(r.mn)+'</b>起</div><span class="cta">看行程 ›</span></div></a>'}).join('');
+        var im=COV[p.id];var when2=(st.ds!=null&&ds.length>1?mdw(ds[0])+' 等 '+ds.length+' 天':(st.ds!=null?'':'最快 ')+mdw(ds[0]))+' 出發';
+        return '<a class="card" href="https://www.kkday.com/zh-tw/product/'+p.id+(UTM?'?'+UTM:'')+'" target="_top"><div class="pic'+(im?'':' noimg c-'+p.c)+'">'+(im?'<img src="https://image.kkday.com/v2/image/get/w_600%2Cc_fit/'+im+'" alt="" loading="lazy" onerror="this.remove()">':'<span class="ic">'+p.c+'</span>')+'<span class="cat c-'+p.c+'">'+p.c+'</span></div><div class="bd"><div class="meta">'+(p.ct?'<span>'+esc(p.ct)+'</span>':'')+(p.dy?'<span class="dot">'+esc(p.dy)+'</span>':'')+(p.from.length?'<span class="dot">'+esc(p.from.join('／'))+'出發</span>':p.port?'<span class="dot">'+esc(p.port)+'</span>':'')+'</div>'+
+          '<p class="nm">'+esc(p.n)+'</p><div class="when">'+when+'</div><div class="when2">'+when2+'</div>'+dt+'<div class="ft"><div class="px">TWD<b>'+money(r.mn)+'</b>起</div><span class="cta">看行程 ›</span></div></div></a>'}).join('');
       $('more').style.display=rows.length>st.lim?'block':'none';$('more').textContent='看更多行程（還有 '+(rows.length-st.lim)+' 個）';
     }
     $('note').textContent='價格為每日更新的參考售價（資料日期 '+D.asof.replace(/-/g,'/')+'），實際價格、出發日期與名額以行程頁為準。';
     render();
+    fetch('kk-covers.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():{}}).then(function(c){COV=c||{};render()}).catch(function(){});
   }
   fetch(SRC,{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(start).catch(function(){$('list').innerHTML='<div class="empty"><b>行程資料暫時無法載入</b>請稍後再試</div>'});
 })();
