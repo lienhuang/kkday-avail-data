@@ -286,7 +286,9 @@ html,body{max-width:100%}
     var TODAY=Math.round((Date.UTC(+t.year,+t.month-1,+t.day)-B.getTime())/864e5),NOW=(+t.hour)*60+(+t.minute);
     var dOf=function(o){return new Date(B.getTime()+o*864e5)},off=function(s){return Math.round((new Date(s+'T00:00:00Z')-B)/864e5)};
     var md=function(o){var d=dOf(o);return (d.getUTCMonth()+1)+'/'+d.getUTCDate()},mdw=function(o){return md(o)+'('+W[dOf(o).getUTCDay()]+')'};
-    var Y0=dOf(TODAY).getUTCFullYear(),mdy=function(o){var y=dOf(o).getUTCFullYear();return (y!==Y0?y+'/':'')+md(o)},mdwy=function(o){return mdy(o)+'('+W[dOf(o).getUTCDay()]+')'};
+    var Y0=dOf(TODAY).getUTCFullYear(),yr=function(o){return dOf(o).getUTCFullYear()},
+      hr=function(h){var a=yr(h.s),b=yr(h.e);return a+'/'+md(h.s)+'–'+(b!==a?b+'/':'')+md(h.e)},
+      hy=function(h){var a=yr(h.s),b=yr(h.e);return (a!==Y0?a+'/':'')+md(h.s)+'–'+(b!==a?b+'/':'')+md(h.e)},mdy=function(o){var y=dOf(o).getUTCFullYear();return (y!==Y0?y+'/':'')+md(o)},mdwy=function(o){return mdy(o)+'('+W[dOf(o).getUTCDay()]+')'};
     var money=function(n){return n.toLocaleString('zh-TW')};
     var cts=function(p){return p.ct?p.ct.split('、'):[]};
     D.p.forEach(function(p,i){var m={};p.rank=i;p.pk.forEach(function(k){var E=TODAY+(k.cd||0)+(k.em!=null&&NOW>k.em?1:0);
@@ -351,7 +353,7 @@ html,body{max-width:100%}
     function drawCal(){
       calcCnt();
       if(calM==null)calM=mStart(tmp.ds!=null?tmp.ds:TODAY);
-      $('hols').innerHTML=hols.map(function(h,i){return '<button data-i="'+i+'" aria-pressed="'+(tmp.hol===h)+'"><b>'+esc(h.n)+'</b><small>'+md(h.s)+'–'+md(h.e)+'</small></button>'}).join('');
+      $('hols').innerHTML=hols.map(function(h,i){return '<button data-i="'+i+'" aria-pressed="'+(tmp.hol===h)+'"><b>'+esc(h.n)+'</b><small>'+hr(h)+'</small></button>'}).join('');
       var mob=innerWidth<=760;$('m1').innerHTML=month(calM,true,mob);$('m2').innerHTML=mob?'':month(nextM(calM),false,true);
       $('dHint').innerHTML=tmp.ds==null?'點一下選<b>最早</b>出發日':tmp.de==null?'已選 '+mdw(tmp.ds)+'，再點一天選<b>最晚</b>出發日；或直接按「確定」只看這一天':'出發日期：<b>'+mdw(tmp.ds)+(tmp.de!==tmp.ds?' – '+mdw(tmp.de):'')+'</b>'}
     $('pDate').onclick=function(e){var b=e.target.closest('button');if(!b)return;
@@ -377,7 +379,7 @@ html,body{max-width:100%}
     $('sum').onclick=function(){S.scrollTop=0;BD.classList.remove('mini')};
     function drawChips(){var cc={};D.p.forEach(function(p){cts(p).forEach(function(x){cc[x]=(cc[x]||0)+1})});
       var top=Object.keys(cc).sort(function(a,b){return cc[b]-cc[a]}).slice(0,6);
-      $('chips').innerHTML='<span class="t">快速逛</span>'+hols.map(function(h,i){return [h,i]}).filter(function(x){return x[0].e>=TODAY+2}).slice(0,3).map(function(x){var h=x[0],i=x[1];return '<button class="hl" data-h="'+i+'" aria-pressed="'+(st.hol===h)+'">'+esc(h.n)+'<small>'+md(h.s)+'–'+md(h.e)+'</small></button>'}).join('')+
+      $('chips').innerHTML='<span class="t">快速逛</span>'+hols.map(function(h,i){return [h,i]}).filter(function(x){return x[0].e>=TODAY+2}).slice(0,3).map(function(x){var h=x[0],i=x[1];return '<button class="hl" data-h="'+i+'" aria-pressed="'+(st.hol===h)+'">'+esc(h.n)+'<small>'+hy(h)+'</small></button>'}).join('')+
         top.map(function(c){return '<button data-t="'+esc(c)+'" aria-pressed="'+(st.to===c)+'">'+esc(c)+'</button>'}).join('')}
     $('chips').onclick=function(e){var b=e.target.closest('button');if(!b)return;
       if(b.dataset.h!=null){var x=hols[+b.dataset.h];if(st.hol===x){st.ds=st.de=st.hol=null}else{st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
@@ -424,7 +426,7 @@ html,body{max-width:100%}
     window.kkApply=function(o){o=o||{};st.to=o.to||'';st.q='';st.c=o.c||'全部';st.ds=st.de=st.hol=null;st.sort='hot';
       if(o.hol){var hs=hols.filter(function(x){return x.e>=TODAY+2}),x=hs[(+o.hol||1)-1];if(x){st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
       st.lim=PAGE;closeAll();if(MOB())document.body.classList.add('mini');render()};
-    window.kkHols=function(){return hols.filter(function(x){return x.e>=TODAY+2}).slice(0,2).map(function(x){return {n:x.n,d:md(x.s)+'–'+md(x.e)}})};
+    window.kkHols=function(){return hols.filter(function(x){return x.e>=TODAY+2}).slice(0,2).map(function(x){return {n:x.n,d:hy(x)}})};
     // 網址參數預設條件（給活動頁漂浮小工具用）：?c=機票&to=日本&hol=1（1=最近連假、2=下一個）&go=1（載入後把活動頁捲到結果區；捲到「快速逛」這列，讓活動頁固定的頂部選單蓋住它而不是蓋住結果）
     (function(){var q={};location.search.replace(/^\?/,'').split('&').forEach(function(s){var kv=s.split('=');if(kv[0])q[decodeURIComponent(kv[0])]=decodeURIComponent((kv[1]||'').replace(/\+/g,' '))});
       if(q.c&&['全部','機票','機加酒','郵輪'].indexOf(q.c)>=0)st.c=q.c;
