@@ -273,7 +273,7 @@ html,body{max-width:100%}
 <script>
 (function(){
   var HIDE=[546506]; // 不給消費者看的商品 ID（例：546506 旅展現場下單專用）
-  var SRC='kk-avail.json',UTM='',PAGE=12,W=['日','一','二','三','四','五','六'];
+  var SKEY='kkfind-state-v1',SRC='kk-avail.json',UTM='',PAGE=12,W=['日','一','二','三','四','五','六'];
   var $=function(id){return document.getElementById(id)};
   var ICON={'全部':'<path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/><circle cx="12" cy="12" r="9"/>','機票':'<path d="M2.5 19h19M3 13l4 1 4-4-7-5 2-1 9 4 3-2a2 2 0 0 1 2 3l-14 7-3-3z"/>','機加酒':'<path d="M3 21V7l9-4 9 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01"/>','郵輪':'<path d="M2 20c2 1 4 1 6 0s4-1 6 0 4 1 6 0M4 17l-1-5h18l-1 5M6 12V8h12v4M10 8V5h4v3"/>'};
   var CITY=['桃園','台北','松山','台中','高雄','台南','花蓮','金門','基隆'];
@@ -389,6 +389,7 @@ html,body{max-width:100%}
     $('cnt').onclick=function(e){if(e.target.id==='reset'){st.from='';st.to='';st.q='';st.ds=st.de=st.hol=null;st.dur='';st.c='全部';render()}};
     function render(){
       if(!st.kp)st.pg=0;st.kp=false;
+      try{sessionStorage.setItem(SKEY,JSON.stringify({b:D.base,c:st.c,from:st.from,to:st.to,q:st.q,ds:st.ds,de:st.de,hol:st.hol?st.hol.n:null,dur:st.dur,sort:st.sort,pg:st.pg}))}catch(e){}
       drawChips();
       if(st.lim===PAGE){$('scr').scrollTop=0;if(!MOB())document.body.classList.remove('mini')}
       setTimeout(function(){$('sumT').textContent=[$('vFrom').textContent+'出發',$('vTo').classList.contains('ph')?'不限目的地':$('vTo').textContent,$('vDate').classList.contains('ph')?'不限日期':$('vDate').textContent].join('・')},0);
@@ -427,6 +428,14 @@ html,body{max-width:100%}
       if(o.hol){var hs=hols.filter(function(x){return x.e>=TODAY+2}),x=hs[(+o.hol||1)-1];if(x){st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
       st.lim=PAGE;closeAll();if(MOB())document.body.classList.add('mini');render()};
     window.kkHols=function(){return hols.filter(function(x){return x.e>=TODAY+2}).slice(0,2).map(function(x){return {n:x.n,d:hy(x)}})};
+    // 記住搜尋條件：消費者點進商品再按上一頁回來時，沿用剛剛的條件與頁數（同一個分頁有效，關掉分頁就清掉）
+    (function(){var s;try{s=JSON.parse(sessionStorage.getItem(SKEY)||'null')}catch(e){}if(!s)return;
+      if(['全部','機票','機加酒','郵輪'].indexOf(s.c)>=0)st.c=s.c;st.from=s.from||'';st.to=s.to||'';st.q=s.q||'';st.dur=s.dur||'';
+      if(['hot','price','soon'].indexOf(s.sort)>=0)st.sort=s.sort;
+      if(s.ds!=null){var dl=off(s.b),a=s.ds+dl,z=(s.de==null?s.ds:s.de)+dl;
+        if(s.hol){var x=hols.filter(function(h){return h.n===s.hol&&h.e===z})[0];if(x){st.ds=x.s;st.de=x.e;st.hol=x}}
+        else if(z>=TODAY){st.ds=Math.max(a,TODAY);st.de=z}}
+      if(s.pg>0){st.pg=s.pg;st.kp=true}})();
     // 網址參數預設條件（給活動頁漂浮小工具用）：?c=機票&to=日本&hol=1（1=最近連假、2=下一個）&go=1（載入後把活動頁捲到結果區；捲到「快速逛」這列，讓活動頁固定的頂部選單蓋住它而不是蓋住結果）
     (function(){var q={};location.search.replace(/^\?/,'').split('&').forEach(function(s){var kv=s.split('=');if(kv[0])q[decodeURIComponent(kv[0])]=decodeURIComponent((kv[1]||'').replace(/\+/g,' '))});
       if(q.c&&['全部','機票','機加酒','郵輪'].indexOf(q.c)>=0)st.c=q.c;
@@ -434,7 +443,7 @@ html,body{max-width:100%}
       if(q.hol){var hs=hols.filter(function(x){return x.e>=TODAY+2}),x=hs[(+q.hol||1)-1];if(x){st.ds=x.s;st.de=x.e;st.hol=x;st.sort='price'}}
       if(q.go){setTimeout(function(){try{document.querySelector('.wrap').scrollIntoView({block:'start',behavior:'smooth'})}catch(e){}},300)}})();
     render();
-    fetch('kk-covers.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():{}}).then(function(c){COV=c||{};render()}).catch(function(){});
+    fetch('kk-covers.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():{}}).then(function(c){COV=c||{};st.kp=true;render()}).catch(function(){});
   }
   fetch(SRC,{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(start).catch(function(){$('list').innerHTML='<div class="empty"><b>行程資料暫時無法載入</b>請稍後再試</div>'});
 })();
