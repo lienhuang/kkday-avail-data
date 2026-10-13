@@ -99,6 +99,7 @@ input{font:inherit;color:inherit}
 .dates{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 10px}
 .dates span{font-size:12px;background:var(--os);border-radius:6px;padding:3px 7px}
 .dates span b{color:var(--o);margin-left:2px}
+.dates span.lo{box-shadow:inset 0 0 0 1px var(--o);font-weight:700}
 .ft{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px dashed var(--line)}
 .px{font-size:12px;color:var(--ink2)}
 .px b{font-size:24px;font-weight:900;color:var(--o);margin:0 2px}
@@ -416,8 +417,8 @@ html,body{max-width:100%}
       if(!rows.length)$('cnt').innerHTML='沒有符合條件的行程<span>，先看看這些熱門行程</span> <button id="reset" class="rst">清除條件</button>';
       L.innerHTML=pg.map(function(r){var p=r.p,ds=r.ds;
         var when=ds.length===1?'<b>'+mdwy(ds[0])+'</b> 出發':'最快 <b>'+mdwy(ds[0])+'</b> 出發，'+(r.f?'這段期間':'到 '+mdy(ds[ds.length-1])+'，')+'共 '+ds.length+' 天可選';
-        var dt=(r.f||ds.length<=3)?'<div class="dates">'+ds.slice(0,6).map(function(o){return '<span>'+mdwy(o)+'<b>$'+money(p.m[o])+'</b></span>'}).join('')+(ds.length>6?'<span>＋'+(ds.length-6)+' 天</span>':'')+'</div>':'';
-        var im=COV[p.id];var when2=(r.f&&ds.length>1?mdwy(ds[0])+' 等 '+ds.length+' 天':(r.f?'':'最快 ')+mdwy(ds[0]))+' 出發';
+        var dt=(r.f||ds.length<=3)?'<div class="dates">'+(function(){var lo=ds.filter(function(o){return p.m[o]===r.mn})[0];return [lo].concat(ds.filter(function(o){return o!==lo}))})().slice(0,6).map(function(o,i){return '<span'+(i===0&&ds.length>1?' class="lo"':'')+'>'+mdwy(o)+'<b>$'+money(p.m[o])+'</b></span>'}).join('')+(ds.length>6?'<span>＋'+(ds.length-6)+' 天</span>':'')+'</div>':'';
+        var im=COV[p.id];var lo2=ds.filter(function(o){return p.m[o]===r.mn})[0];var when2=r.f&&ds.length>1?mdwy(lo2)+' 最便宜・共 '+ds.length+' 天':(r.f?'':'最快 ')+mdwy(ds[0])+' 出發';
         return '<a class="card" href="https://www.kkday.com/zh-tw/product/'+p.id+(UTM?'?'+UTM:'')+'" target="_top"><div class="pic'+(im?'':' noimg c-'+p.c)+'">'+(im?'<img src="https://image.kkday.com/v2/image/get/w_600%2Cc_fit/'+im+'" alt="" loading="lazy" onerror="this.remove()">':'<span class="ic">'+p.c+'</span>')+'<span class="cat c-'+p.c+'">'+p.c+'</span>'+(r.rec?'<span class="rec">你可能也喜歡</span>':'')+'</div><div class="bd"><div class="meta">'+(p.ct?'<span>'+esc(p.ct)+'</span>':'')+(p.dy?'<span class="dot">'+esc(p.dy)+'</span>':'')+(p.from.length?'<span class="dot">'+esc(p.from.join('／'))+'出發</span>':p.port?'<span class="dot">'+esc(p.port)+'</span>':'')+'</div>'+
           '<p class="nm">'+esc(p.n)+'</p><div class="when">'+when+'</div><div class="when2">'+when2+'</div>'+dt+'<div class="ft"><div class="px">TWD<b>'+money(r.mn)+'</b>起</div><span class="cta">看行程 ›</span></div></div></a>'}).join('');
       $('more').style.display='none';pgr(rows.length);$('more').textContent='看更多行程（還有 '+(rows.length-st.lim)+' 個）';
